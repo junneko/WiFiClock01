@@ -9,8 +9,8 @@ void	spi_initialize( void );
 
 /* ----- segdisplay.c ----- */
 void	seg7_initialize( void );
-void	off7seg_display( void );
-void	seg7_display( struct tm *time );
+void	seg7_dispoff( void );
+void	time_display( struct tm *time );
 void	version_display( void );
 void	apmode_display( void );
 void	ipaddress_display( void );

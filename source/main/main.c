@@ -35,29 +35,33 @@ static void	io_initialize( void )
 {
 	gpio_config_t	io_conf = {};
 
-	/* ----- 入力 プルアップ 割り込みなしグループ  */
+	/* ----- 機能リセット ----- */
+	gpio_reset_pin( DISPENPIN );
+	gpio_reset_pin( DISPLAYPIN );
+
+	/* ----- 入力 PU/PDなし 割り込みなしグループ ----- */
 	io_conf.intr_type = GPIO_INTR_DISABLE;		// disable interrupt
 	io_conf.mode = GPIO_MODE_INPUT;			// 
-	io_conf.pin_bit_mask = ESP32_PIN4 | ESP32_PIN5 | ESP32_PIN34 | ESP32_PIN35;	// GPIO4,5,34,35
+	io_conf.pin_bit_mask = ESP32_PIN34 | ESP32_PIN35;	// GPIO4,5,GPIO12(MISO),35
+	io_conf.pull_down_en = 0;			// disable pull-down mode
+	io_conf.pull_up_en = 0;				// disnable pull-up mode
+	gpio_config( &io_conf );			// configure GPIO with the given settings
+
+	/* ----- 入力 プルアップ 割り込みなしグループ ----- */
+	io_conf.intr_type = GPIO_INTR_DISABLE;		// disable interrupt
+	io_conf.mode = GPIO_MODE_INPUT;			// 
+	io_conf.pin_bit_mask = ESP32_PIN4 | ESP32_PIN5 | ESP32_PIN12;	// GPIO4,5,GPIO12(MISO),35
 	io_conf.pull_down_en = 0;			// disable pull-down mode
 	io_conf.pull_up_en = 1;				// enable pull-up mode
 	gpio_config( &io_conf );			// configure GPIO with the given settings
 
-	/* ----- 入力 プルダウン 割り込みなしグループ  */
-	io_conf.intr_type = GPIO_INTR_DISABLE;		// disable interrupt
-	io_conf.mode = GPIO_MODE_INPUT;			// 
-	io_conf.pin_bit_mask = ESP32_PIN12;		// GPIO12(7SEG)
-	io_conf.pull_down_en = 1;			// disable pull-down mode
-	io_conf.pull_up_en = 0;				// enable pull-up mode
-	gpio_config( &io_conf );			// configure GPIO with the given settings
-
 	/* ----- 出力 ----- */
-	esp_rom_gpio_pad_select_gpio( WIFI_LED );	// WiFi LED
-	gpio_set_direction( WIFI_LED, GPIO_MODE_OUTPUT );
-	esp_rom_gpio_pad_select_gpio( IP_LED );		// IP LED
-	gpio_set_direction( IP_LED, GPIO_MODE_OUTPUT );
-	esp_rom_gpio_pad_select_gpio( SYNC_LED );	// SNTP SYNC LED
-	gpio_set_direction( SYNC_LED, GPIO_MODE_OUTPUT );
+	esp_rom_gpio_pad_select_gpio( WIFI_EN );	// WiFi LED
+	gpio_set_direction( WIFI_EN, GPIO_MODE_OUTPUT );
+	esp_rom_gpio_pad_select_gpio( IP_EN );		// IP LED
+	gpio_set_direction( IP_EN, GPIO_MODE_OUTPUT );
+	esp_rom_gpio_pad_select_gpio( TIME_SYNC );	// SNTP SYNC LED
+	gpio_set_direction( TIME_SYNC, GPIO_MODE_OUTPUT );
 
 	/* ----- タイマー出力 ----- */
 	esp_rom_gpio_pad_select_gpio( TIMER1PIN );	// TIMER1
@@ -363,28 +367,23 @@ static void	internal_initialize( void )
 	parameter_read( );
 
 	/* ----- バージョン表示 ----- */
-	version_display( );
+	version_display( );		/* バージョンは必ず表示 */
+	dispenflg = gpio_get_level( DISPENPIN );
+	dispflg = gpio_get_level( DISPLAYPIN );
 
 	/* ----- モード決定 ----- */
-	if( gpio_get_level( MODEPIN )){		/* OPEN:Station */
+	wifi_mode = gpio_get_level( MODEPIN );
+	if( wifi_mode ){		/* OPEN:Station */
 		if( strlen( ssid ) == 0 ){	/* SSID未設定は設定モードへ */
 			wifi_mode = WIFI_AP;
 		}
-		else{
-			wifi_mode = WIFI_STATION;
-		}
-		if( gpio_get_level( STATICIPPIN )){	/* OPEN:DHCP */
-			addr_mode = IP_DYNAMIC;
-		}
-		else{					/* SHORT:STATIC */
-			addr_mode = IP_STATIC;
-		}
+		addr_mode = gpio_get_level( STATICIPPIN );	/* OPEN:DHCP,SHORT:STATIC */
 	}
-	else{					/* SHORT:Access Point */
-		wifi_mode = WIFI_AP;
+	else{				/* SHORT:Access Point */
+		addr_mode = IP_STATIC;
 	}
 	/* ---------- Station mode(通常動作) ---------- */
-	if(( wifi_mode == WIFI_STATION ) && ( strlen( ssid ) != 0 )){
+	if( wifi_mode == WIFI_STATION ){
 		initialize_wifi_station( );
 		esp_netif_get_ip_info( esp_netif_get_handle_from_ifkey( "WIFI_STA_DEF" ), &ip_info );	/* アドレス情報ゲット */
 		ipaddress_display( );		/* IPアドレス表示 */
@@ -411,14 +410,61 @@ static void	internal_initialize( void )
 		/* ----- 時刻表示 ----- */
 		time( &nowtime );
 		localtime_r( &nowtime, &timeinfo );
-		seg7_display( &timeinfo );		/* 表示 */
+		if( dispenflg && dispflg ){
+			time_display( &timeinfo );	/* 表示 */
+		}
+		else{
+			seg7_dispoff( );
+		}
 	}
 	/* ---------- Access Point mode(アクセスポイント設定) ---------- */
 	else{
 		initialize_wifi_softap( );
+		vTaskDelay( 2000 / portTICK_PERIOD_MS );	/* 2sec Ver表示 */
 		esp_netif_get_ip_info( esp_netif_get_handle_from_ifkey( "WIFI_AP_DEF" ), &ip_info );	/* アドレス情報ゲット */
-		apmode_display( );	/* APmode */
+		if( dispenflg && dispflg ){
+			apmode_display( );	/* APmode */
+		}
+		else{
+			seg7_dispoff( );
+		}
 	}
+}
+
+/**
+*	7セグの表示(メイン)
+*	 in	最新表示ポイント
+*	out	更新表示ポイント
+*/
+static int	seg7_display( int disp )
+{
+	/* --- 表示OFF --- */
+	if( dispflg == 0 ){			/* SHORT:表示しない */
+		seg7_dispoff( );
+	}
+	/* --- GPIO4 OPEN:DISP TIME --- */
+	else if( modepin ){
+		time_display( &timeinfo );	/* 表示は後 */
+		disp = 0;
+	}
+	/* --- SHORT:DISP ADDRESS --- */
+	else{
+		if( disp == 0 ){
+			ipaddress_display( );	/* IP */
+		}
+		else if( disp == 2 ){
+			netmask_display( );	/* NM */
+		}
+		else if( disp == 4 ){
+			gateway_display( );	/* GW */
+		}
+		disp++;
+		if( disp >= 6 ){
+			disp = 0;
+		}
+	}
+
+	return	disp;
 }
 
 /**
@@ -437,39 +483,29 @@ void	app_main( void )
 	time( &nowtime );	/* 現在時刻取得 */
 	oldt = nowtime;
 	_forever{
+		/* ----- 入力 ----- */
+		dispenflg = gpio_get_level( DISPENPIN );
+		dispflg = gpio_get_level( DISPLAYPIN );
+		modepin = gpio_get_level( MODEPIN );
 		/* ---------- Station mode ---------- */
 		if( wifi_mode == WIFI_STATION ){
 			time( &nowtime );		/* 現在時刻取得 */
 			if( oldt != nowtime ){		/* 時刻更新した */
 				oldt = nowtime;
 				if( sntp_get_sync_status( ) == SNTP_SYNC_STATUS_COMPLETED ){
-					gpio_set_level( SYNC_LED, ON );
+					gpio_set_level( TIME_SYNC, ON );	/* 更新した1秒だけ */
 				}
 				else{
-					gpio_set_level( SYNC_LED, OFF );
+					gpio_set_level( TIME_SYNC, OFF );
 				}
 				localtime_r( &nowtime, &timeinfo );	/* 時刻変換 time_t→rtc_t */
-				timer_sequence( );	/* タイマ */
-				/* --- GPIO4 OPEN:DISP TIME --- */
-				if( gpio_get_level( MODEPIN )){
-					seg7_display( &timeinfo );	/* 表示は後 */
-					disp = 0;
+				timer_sequence( );		/* タイマ */
+				/* ----- 表示 ----- */
+				if( dispenflg ){
+					disp = seg7_display( disp );
 				}
-				/* --- SHORT:DISP ADDRESS --- */
 				else{
-					if( disp == 0 ){
-						ipaddress_display( );	/* IP */
-					}
-					else if( disp == 2 ){
-						netmask_display( );	/* NM */
-					}
-					else if( disp == 4 ){
-						gateway_display( );	/* GW */
-					}
-					disp++;
-					if( disp >= 6 ){
-						disp = 0;
-					}
+					disp = 0;
 				}
 			}
 		}

@@ -12,9 +12,6 @@ const uint8_t	segdata[] = { 0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 0x80
 /* --- 7SEG STS 0:点灯 ---      A     V     P     i     U     t */
 const uint8_t	segadj[] = { 0x88, 0xE3, 0x8C, 0xFB, 0xC1, 0x87 };
 
-/* ----- SPI転送用 ----- */
-uint8_t	segbuf[16];	/* 7SEG 年月日8桁、時分秒8桁 */
-
 /**
 *	数値を7SEG DATAに(unsigned char,ゼロサプレスしない)
 *	 in	num:データ
@@ -65,7 +62,7 @@ static void	*usto7seg( word num, byte *buf )
 /**
 *	7セグ消灯
 */
-void	dispoff7seg( void )
+void	seg7_dispoff( void )
 {
 	int	i;
 
@@ -81,12 +78,12 @@ void	dispoff7seg( void )
 */
 void	seg7_initialize( void )
 {
-	memset( &trnst, 0, sizeof( trnst ));	// Zero out the transaction
-	trnst.length = 128;		// Len is in bytes, transaction length is in bits.
-	trnst.tx_buffer = segbuf;	// Data buffer
-	trnst.user = (void*)1;		// D/C needs to be set to 1
+	memset( &trnst, 0, sizeof( trnst ));	// 構造体ゼロクリア
+	trnst.length = 128;			// 転送ビット数(8bit*16=128)
+	trnst.tx_buffer = segbuf;		// バッファ指定
+	trnst.user = (void*)1;			// D/C needs to be set to 1
 
-	dispoff7seg( );			/* 消す */
+	seg7_dispoff( );			/* 消す */
 }
 
 /**
@@ -98,7 +95,7 @@ void	seg7_initialize( void )
 *	下位から先に送る、日時を先にすることにより
 *	日付時刻と時刻だけの２通り使い方ができる
 */
-void	seg7_display( struct tm *time )
+void	time_display( struct tm *time )
 {
 	byte	buf[8];
 
@@ -140,6 +137,7 @@ void	seg7_display( struct tm *time )
 		segbuf[14] = buf[1];
 		segbuf[15] = 0xff;		/* AM/PM */
 	}
+	/* ----- 転送 ----- */
 	esperr = spi_device_transmit( spi, &trnst );	// Transmit!
 	assert( esperr == ESP_OK );	// Should have had no issues.
 }
@@ -167,7 +165,6 @@ void	version_display( void )
 	segbuf[2] = 0x88;			/* A */
 	segbuf[1] = 0xAF;			/* r */
 	segbuf[0] = 0x86;			/* E */
-
 	/* ----- 下段 ----- */
 	segbuf[14] = 0xE3;			/* v */
 	segbuf[13] = 0x86;			/* E */
@@ -175,7 +172,7 @@ void	version_display( void )
 	segbuf[11] = segdata[UVER] & 0x7F;	/* V+. */
 	segbuf[10] = segdata[MVER];		/* V */
 	segbuf[9] =  segdata[LVER];		/* V */
-
+	/* ----- 転送 ----- */
 	esperr = spi_device_transmit( spi, &trnst );	// Transmit!
 	assert( esperr == ESP_OK );		// Should have had no issues.
 }
@@ -200,14 +197,13 @@ void	apmode_display( void )
 	segbuf[3] = 0xA3;	/* o */
 	segbuf[2] = 0xA1;	/* d */
 	segbuf[1] = 0x86;	/* E */
-
 	/* ----- 下段 ----- */
 	segbuf[14] = 0x92;	/* S */
 	segbuf[13] = 0x86;	/* E */
 	segbuf[12] = 0x87;	/* t */
 	segbuf[10] = 0xC1;	/* U */
 	segbuf[9] = 0x8C;	/* P */
-
+	/* ----- 転送 ----- */
 	esperr = spi_device_transmit( spi, &trnst );	// Transmit!
 	assert( esperr == ESP_OK );	// Should have had no issues.
 }
@@ -236,7 +232,6 @@ void	ipaddress_display( void )
 	segbuf[5] = buf[2] & BYTE_MASK_B7;	/* with . */
 	segbuf[6] = buf[1];
 	segbuf[7] = buf[0];
-
 	/* ----- 下段 ----- */
 	segbuf[8] = 0x8C;		/* P */
 	segbuf[9] = 0xFF;
@@ -248,12 +243,11 @@ void	ipaddress_display( void )
 	segbuf[13] = buf[2] & BYTE_MASK_B7;	/* with . */
 	segbuf[14] = buf[1];
 	segbuf[15] = buf[0];
-
 	if( addr_mode == IP_STATIC ){
 		segbuf[0] &= BYTE_MASK_B7;
 		segbuf[8] &= BYTE_MASK_B7;
 	}
-
+	/* ----- 転送 ----- */
 	esperr = spi_device_transmit( spi, &trnst );	// Transmit!
 	assert( esperr == ESP_OK );	// Should have had no issues.
 }
@@ -282,7 +276,6 @@ void	netmask_display( void )
 	segbuf[5] = buf[2] & BYTE_MASK_B7;	/* with . */
 	segbuf[6] = buf[1];
 	segbuf[7] = buf[0];
-
 	/* ----- 下段 ----- */
 	segbuf[8] = 0xC8;		/* M */
 	segbuf[9] = 0xFF;
@@ -299,7 +292,7 @@ void	netmask_display( void )
 		segbuf[0] &= BYTE_MASK_B7;
 		segbuf[8] &= BYTE_MASK_B7;
 	}
-
+	/* ----- 転送 ----- */
 	esperr = spi_device_transmit( spi, &trnst );	// Transmit!
 	assert( esperr == ESP_OK );	// Should have had no issues.
 }
@@ -328,7 +321,6 @@ void	gateway_display( void )
 	segbuf[5] = buf[2] & BYTE_MASK_B7;	/* with . */
 	segbuf[6] = buf[1];
 	segbuf[7] = buf[0];
-
 	/* ----- 下段 ----- */
 	segbuf[8] = 0xD5;		/* W */
 	segbuf[9] = 0xFF;
@@ -345,7 +337,7 @@ void	gateway_display( void )
 		segbuf[0] &= BYTE_MASK_B7;
 		segbuf[8] &= BYTE_MASK_B7;
 	}
-
+	/* ----- 転送 ----- */
 	esperr = spi_device_transmit( spi, &trnst );	// Transmit!
 	assert( esperr == ESP_OK );	// Should have had no issues.
 }

@@ -27,7 +27,7 @@ static void	ap_event_handler( void *arg, esp_event_base_t event_base, int32_t ev
 {
 	/* ----- 接続したとき ----- */
 	if( event_id == WIFI_EVENT_AP_STACONNECTED ){	
-		gpio_set_level( WIFI_LED, ON );
+		gpio_set_level( WIFI_EN, ON );
 		/* ----- HTTP SERVER START ----- */
 		if( httpserver == NULL ){
 			httpserver = webserver_start( );
@@ -35,7 +35,7 @@ static void	ap_event_handler( void *arg, esp_event_base_t event_base, int32_t ev
 	}
 	/* ----- 切断したとき ----- */
 	else if( event_id == WIFI_EVENT_AP_STADISCONNECTED ){
-		gpio_set_level( WIFI_LED, OFF );
+		gpio_set_level( WIFI_EN, OFF );
 		/* ----- HTTP SERVER STOP ----- */
 		if( httpserver ){
 			httpd_stop( httpserver );
@@ -97,7 +97,7 @@ static void	sta_event_handler( void* arg, esp_event_base_t event_base, int32_t e
 		/* --- 接続開始 --- */
 		if( event_id == WIFI_EVENT_STA_START ){			/*  */
 			esp_wifi_connect( );
-			gpio_set_level( WIFI_LED, ON );
+			gpio_set_level( WIFI_EN, ON );
 		}
 		/* --- 接続した --- */
 		else if( event_id == WIFI_EVENT_STA_CONNECTED ){
@@ -175,7 +175,7 @@ void	initialize_wifi_station( void )
 		if( httpserver == NULL ){
 			httpserver = webserver_start( );
 		}
-		gpio_set_level( IP_LED, ON );
+		gpio_set_level( IP_EN, ON );
 	}
 	else if( bits & WIFI_FAIL_BIT ){	/* 再接続試行終わり */
 		ESP_LOGI( WTAG, "Failed to connect to SSID:%s, password:%s", ssid, password );
@@ -183,8 +183,8 @@ void	initialize_wifi_station( void )
 			httpd_stop( httpserver );	/* HTTPサーバ停止 */
 			httpserver = NULL;
 		}
-		gpio_set_level( WIFI_LED, OFF );
-		gpio_set_level( IP_LED, OFF );
+		gpio_set_level( WIFI_EN, OFF );
+		gpio_set_level( IP_EN, OFF );
 	}
 	else{
 		ESP_LOGE( WTAG, "UNEXPECTED EVENT" );

@@ -5,9 +5,9 @@
 *	https://opensource.org/licenses/mit-license.php
 */
 /* ----- 表示バージョン ----- */
-#define	UVER	0
-#define	MVER	1
-#define	LVER	0
+#define	UVER	0	/* 大改訂 */
+#define	MVER	2	/* 中改訂(機能追加) */
+#define	LVER	0	/* 小改訂(バグ修正など) */
 
 /* ----- I/O設定用 ----- */
 #define	ESP32_PIN4	(1ULL<<4)
@@ -19,15 +19,17 @@
 /* ----- I/Oピン定義 ----- */
 #define	MODEPIN		 4	/* Wi-Fiモード/表示 */
 #define	STATICIPPIN	 5	/* IP ADDRESS固定 */
+#define	DISPENPIN	34	/* 7セグ表示有効(L:転送しない) */
+#define	DISPLAYPIN	35	/* 表示なし(L:ブランクで電流節約) */
 
 #define	TIMER1PIN	16
 #define	TIMER2PIN	17
 #define	TIMER3PIN	18
 #define	TIMER4PIN	19
 
-#define	WIFI_LED	25
-#define	IP_LED		26
-#define	SYNC_LED	27
+#define	WIFI_EN	25
+#define	IP_EN		26
+#define	TIME_SYNC	27
 
 /* ----- SPI ----- */
 #define	PIN_NUM_MISO	-1	/* 12 未使用 */

@@ -8,8 +8,6 @@
 
 static const char	*TAG = "static_ip";
 
-static int s_retry_num = 0;
-
 /**
 *	DNSÉTÅ[Éoìoò^
 *	 in	
