@@ -8,7 +8,7 @@
 #include	"main.h"
 
 /* ----- バージョン ----- */
-const char	*version = "0.00.01";
+const char	*version = "0.00.02";
 
 /**
 *	内部値初期化
@@ -36,23 +36,15 @@ static void	io_initialize( void )
 	gpio_config_t	io_conf = {};
 
 	/* ----- 機能リセット ----- */
-	gpio_reset_pin( DISPENPIN );
-	gpio_reset_pin( DISPLAYPIN );
+	gpio_reset_pin( DISPLAYPIN );	/* 36 */
+	gpio_reset_pin( STATICIPPIN );	/* 39 */
 
 	/* ----- 入力 PU/PDなし 割り込みなしグループ ----- */
 	io_conf.intr_type = GPIO_INTR_DISABLE;		// disable interrupt
 	io_conf.mode = GPIO_MODE_INPUT;			// 
-	io_conf.pin_bit_mask = ESP32_PIN34 | ESP32_PIN35;	// GPIO4,5,GPIO12(MISO),35
+	io_conf.pin_bit_mask = ESP32_PIN34 | ESP32_PIN35 | ESP32_PIN36 | ESP32_PIN39;	// GPIO4,5,GPIO12(MISO),35
 	io_conf.pull_down_en = 0;			// disable pull-down mode
 	io_conf.pull_up_en = 0;				// disnable pull-up mode
-	gpio_config( &io_conf );			// configure GPIO with the given settings
-
-	/* ----- 入力 プルアップ 割り込みなしグループ ----- */
-	io_conf.intr_type = GPIO_INTR_DISABLE;		// disable interrupt
-	io_conf.mode = GPIO_MODE_INPUT;			// 
-	io_conf.pin_bit_mask = ESP32_PIN4 | ESP32_PIN5 | ESP32_PIN12;	// GPIO4,5,GPIO12(MISO),35
-	io_conf.pull_down_en = 0;			// disable pull-down mode
-	io_conf.pull_up_en = 1;				// enable pull-up mode
 	gpio_config( &io_conf );			// configure GPIO with the given settings
 
 	/* ----- 出力 ----- */
@@ -475,11 +467,11 @@ static int	seg7_display( int disp )
 void	app_main( void )
 {
 	time_t	oldt;
-	int	disp;
+	int	dispitm;	/* 表示項目 */
 
 	internal_initialize( );
 	/* ----- メインループ ----- */
-	disp = 0;
+	dispitm = 0;
 	time( &nowtime );	/* 現在時刻取得 */
 	oldt = nowtime;
 	_forever{
@@ -502,10 +494,10 @@ void	app_main( void )
 				timer_sequence( );		/* タイマ */
 				/* ----- 表示 ----- */
 				if( dispenflg ){
-					disp = seg7_display( disp );
+					dispitm = seg7_display( dispitm );
 				}
 				else{
-					disp = 0;
+					dispitm = 0;
 				}
 			}
 		}

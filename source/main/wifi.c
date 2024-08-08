@@ -66,7 +66,7 @@ void	initialize_wifi_softap( void )
 			.channel = AP_ESP_WIFI_CHANNEL,		/* WiFiチャンネル */
 			.password = AP_ESP_WIFI_PASS,		/* パスワード */
 			.max_connection = AP_MAX_STA_CONN,	/* 最大接続台数 */
-			.authmode = WIFI_AUTH_WPA_WPA2_PSK,	/* 認証方式 */
+			.authmode = WIFI_AUTH_WPA_WPA2_PSK,	/* 認証方式 *//*WIFI_AUTH_OPEN*/
 		}
 	};
 	if( strlen( AP_ESP_WIFI_PASS ) == 0 ){			/* パスワードなし */

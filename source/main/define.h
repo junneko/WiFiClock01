@@ -10,24 +10,23 @@
 #define	LVER	0	/* 小改訂(バグ修正など) */
 
 /* ----- I/O設定用 ----- */
-#define	ESP32_PIN4	(1ULL<<4)
-#define	ESP32_PIN5	(1ULL<<5)
-#define	ESP32_PIN12	(1ULL<<12)
 #define	ESP32_PIN34	(1ULL<<34)
 #define	ESP32_PIN35	(1ULL<<35)
+#define	ESP32_PIN36	(1ULL<<36)
+#define	ESP32_PIN39	(1ULL<<39)
 
 /* ----- I/Oピン定義 ----- */
-#define	MODEPIN		 4	/* Wi-Fiモード/表示 */
-#define	STATICIPPIN	 5	/* IP ADDRESS固定 */
-#define	DISPENPIN	34	/* 7セグ表示有効(L:転送しない) */
-#define	DISPLAYPIN	35	/* 表示なし(L:ブランクで電流節約) */
+#define	MODEPIN		34	/* Wi-Fiモード/IP表示 */
+#define	DISPENPIN	35	/* 7セグ表示有効(L:転送しない) */
+#define	DISPLAYPIN	36	/* 表示なし(L:ブランクで電流節約) */
+#define	STATICIPPIN	39	/* IP ADDRESS固定 */
 
 #define	TIMER1PIN	16
 #define	TIMER2PIN	17
 #define	TIMER3PIN	18
 #define	TIMER4PIN	19
 
-#define	WIFI_EN	25
+#define	WIFI_EN		25
 #define	IP_EN		26
 #define	TIME_SYNC	27
 

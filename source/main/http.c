@@ -628,28 +628,28 @@ httpd_uri_t	setups = {	/* Wi-Fi設定(設定) */
 	.user_ctx  = NULL
 };
 
-httpd_uri_t	ntpserverg = {	/* (読み込み) */
+httpd_uri_t	ntpserverg = {	/* サーバ設定(読み込み) */
 	.uri       = "/ntpserver.cgi",
 	.method    = HTTP_GET,
 	.handler   = ntpserver_get_handler,
 	.user_ctx  = NULL
 };
 
-httpd_uri_t	ntpservers = {	/* (設定) */
+httpd_uri_t	ntpservers = {	/* サーバ設定(設定) */
 	.uri       = "/ntpserver.cgi",
 	.method    = HTTP_POST,
 	.handler   = ntpserver_set_handler,
 	.user_ctx  = NULL
 };
 
-httpd_uri_t	timerg = {	/* (読み込み) */
+httpd_uri_t	timerg = {	/* タイマ設定(読み込み) */
 	.uri       = "/timer.cgi",
 	.method    = HTTP_GET,
 	.handler   = timer_get_handler,
 	.user_ctx  = NULL
 };
 
-httpd_uri_t	timers = {	/* (設定) */
+httpd_uri_t	timers = {	/* タイマ設定(設定) */
 	.uri       = "/timer.cgi",
 	.method    = HTTP_POST,
 	.handler   = timer_set_handler,
