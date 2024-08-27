@@ -8,7 +8,7 @@
 #include	"main.h"
 
 /* ----- バージョン ----- */
-const char	*version = "0.00.02";
+const char	*version = "0.31.00";
 
 /**
 *	内部値初期化
@@ -44,7 +44,7 @@ static void	io_initialize( void )
 	io_conf.mode = GPIO_MODE_INPUT;			// 
 	io_conf.pin_bit_mask = ESP32_PIN34 | ESP32_PIN35 | ESP32_PIN36 | ESP32_PIN39;	// GPIO4,5,GPIO12(MISO),35
 	io_conf.pull_down_en = 0;			// disable pull-down mode
-	io_conf.pull_up_en = 0;				// disnable pull-up mode
+	io_conf.pull_up_en = 0;				// disable pull-up mode
 	gpio_config( &io_conf );			// configure GPIO with the given settings
 
 	/* ----- 出力 ----- */
@@ -335,7 +335,8 @@ static void	parameter_read( void )
 static void	internal_initialize( void )
 {
 	char	str[16];
-	int	retry;
+	int	retry, ofst = 0;
+	time_t	tmp;
 	int	retry_count = 8;
 	esp_err_t	ret;
 	extern const char	*timezonetbl[];
@@ -399,9 +400,25 @@ static void	internal_initialize( void )
 			}
 			vTaskDelay( 2000 / portTICK_PERIOD_MS );	/* 2sec */
 		}
-		/* ----- 時刻表示 ----- */
+		/* ----- 時刻検証 ----- */
 		time( &nowtime );
-		localtime_r( &nowtime, &timeinfo );
+		localtime_r( &nowtime, &timeinfo );	/* 現在時刻 */
+		if( tdispmode == MODE28H ){		/* 28h */
+			tmp = nowtime - HOUR28OFFSET;		/* 4時間分秒戻る */
+			ofst = 4;
+		}
+		else if( tdispmode == MODE30H ){	/* 30h */
+			tmp = nowtime - HOUR30OFFSET;		/* 6時間分秒戻る */
+			ofst = 6;
+		}
+		if( ofst != 0 ){			/* 28,30時間制のみ */
+			localtime_r( &tmp, &cmptime );
+			if( cmptime.tm_mday != timeinfo.tm_mday ){	/* 日が変わったときだけ処理(24-30) */
+				timeinfo = cmptime;
+				timeinfo.tm_hour += ofst;	/* 前日のデータに時間足す */
+			}
+		}
+		/* ----- 時刻表示 ----- */
 		if( dispenflg && dispflg ){
 			time_display( &timeinfo );	/* 表示 */
 		}
@@ -466,11 +483,13 @@ static int	seg7_display( int disp )
 */
 void	app_main( void )
 {
-	time_t	oldt;
+	time_t	oldt, tmp;
+	int	ofst;
 	int	dispitm;	/* 表示項目 */
 
 	internal_initialize( );
 	/* ----- メインループ ----- */
+	ofst = 0;
 	dispitm = 0;
 	time( &nowtime );	/* 現在時刻取得 */
 	oldt = nowtime;
@@ -493,6 +512,21 @@ void	app_main( void )
 				localtime_r( &nowtime, &timeinfo );	/* 時刻変換 time_t→rtc_t */
 				timer_sequence( );		/* タイマ */
 				/* ----- 表示 ----- */
+				if( tdispmode == MODE28H ){		/* 28h */
+					tmp = nowtime - HOUR28OFFSET;		/* 4時間分秒戻る */
+					ofst = 4;
+				}
+				else if( tdispmode == MODE30H ){	/* 30h */
+					tmp = nowtime - HOUR30OFFSET;		/* 6時間分秒戻る */
+					ofst = 6;
+				}
+				if( ofst != 0 ){			/* 28,30時間制のみ */
+					localtime_r( &tmp, &cmptime );
+					if( cmptime.tm_mday != timeinfo.tm_mday ){	/* 日が変わったときだけ処理(24-30) */
+						timeinfo = cmptime;
+						timeinfo.tm_hour += ofst;	/* 前日のデータに時間足す */
+					}
+				}
 				if( dispenflg ){
 					dispitm = seg7_display( dispitm );
 				}

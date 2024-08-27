@@ -120,7 +120,7 @@ void	time_display( struct tm *time )
 	ucto7seg( time->tm_min, buf );		/* •ª */
 	segbuf[11] = buf[2] & BYTE_MASK_B7;
 	segbuf[12] = buf[1];
-	if( tdispmode == 0 ){	/* 12h */
+	if( tdispmode == MODE12H ){	/* 12h */
 		ucto7seg( time->tm_hour % 12, buf );	/* Žž */
 		segbuf[13] = buf[2] & BYTE_MASK_B7;
 		segbuf[14] = buf[1];
@@ -131,7 +131,7 @@ void	time_display( struct tm *time )
 			segbuf[15] = 0x0C;
 		}
 	}
-	else{			/* 24h */
+	else{			/* 24,28,30h */
 		ucto7seg( time->tm_hour, buf );	/* Žž */
 		segbuf[13] = buf[2] & BYTE_MASK_B7;
 		segbuf[14] = buf[1];

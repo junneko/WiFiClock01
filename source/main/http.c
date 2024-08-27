@@ -38,9 +38,9 @@ const char	*timezonetbl[42] = /* setenv()óp */
 	"UTC+12:00", "UTC+13:00"						/* 40-41 */
 };
 
-const char	*disphour[2] = 
+const char	*disphour[4] = 
 {
-	"12HOUR", "24HOUR"
+	"12HOUR", "24HOUR", "28HOUR", "30HOUR"
 };
 
 /* ----- 1çÄñ⁄ï™ ----- */
@@ -111,7 +111,7 @@ void	disptime_select( char *buf, char *name, int sel )
 
 	sprintf( str, selecth, name );
 	strcat( buf, str );
-	for( i = 0; i < 2; i++ ){
+	for( i = 0; i < 4; i++ ){
 		if( i == sel ){
 			sprintf( str, options, i, disphour[i] );
 		}

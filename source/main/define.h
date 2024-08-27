@@ -6,7 +6,7 @@
 */
 /* ----- 表示バージョン ----- */
 #define	UVER	0	/* 大改訂 */
-#define	MVER	2	/* 中改訂(機能追加) */
+#define	MVER	3	/* 中改訂(機能追加) */
 #define	LVER	0	/* 小改訂(バグ修正など) */
 
 /* ----- I/O設定用 ----- */
@@ -16,9 +16,9 @@
 #define	ESP32_PIN39	(1ULL<<39)
 
 /* ----- I/Oピン定義 ----- */
-#define	MODEPIN		34	/* Wi-Fiモード/IP表示 */
+#define	DISPLAYPIN	34	/* 表示なし(L:ブランク表示で電流節約) */
 #define	DISPENPIN	35	/* 7セグ表示有効(L:転送しない) */
-#define	DISPLAYPIN	36	/* 表示なし(L:ブランクで電流節約) */
+#define	MODEPIN		36	/* Wi-Fiモード/IP表示 */
 #define	STATICIPPIN	39	/* IP ADDRESS固定 */
 
 #define	TIMER1PIN	16
@@ -64,11 +64,11 @@
 /* --- 時刻表示定義 --- */
 #define	MODE12H			0
 #define	MODE24H			1
-/*#define	MODE28H			2*/
-/*#define	MODE30H			3*/
+#define	MODE28H			2
+#define	MODE30H			3
 
-/*#define	HOUR28OFFSET		14400L*/	/* 28時間制 */
-/*#define	HOUR30OFFSET		21600L*/	/* 30時間制 */
+#define	HOUR28OFFSET		14400L		/* 28時間制 */
+#define	HOUR30OFFSET		21600L		/* 30時間制 */
 
 /* ----- タイマモード ----- */
 #define	TIMMODE_OFF		0
